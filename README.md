@@ -46,10 +46,9 @@ This package implements:
 
 ## Installation
 
-To install you can either use _conda_ or _pip_:
+To install, use _pip_:
 
-#### PIP
-```
+```bash
 git clone https://github.com/o-laurent/bayesian_tree
 cd bayesian_tree
 pip install -e .
@@ -60,4 +59,3 @@ pip install -e .
 We include some examples for various uses in the [examples](examples) directory.
 The models are fully compatible with scikit-learn, so you can use them for e.g.
 cross-validation or performance evaluation using scikit-learn functions.
-
