@@ -1,5 +1,8 @@
 # A Bayesian Decision Tree Algorithm
+
 This is an implementation of the paper: [A Bayesian Decision Tree Algorithm](https://arxiv.org/abs/1901.03214) by Nuti et al.
+
+This is a fork from the original outdated implementation.
 
 ## Feature Support
 
@@ -45,17 +48,9 @@ This package implements:
 
 To install you can either use _conda_ or _pip_:
 
-#### Conda
-```
-git clone https://github.com/UBS-IB/bayesian_tree
-cd bayesian_tree
-conda build conda.recipe
-conda install --use-local bayesian_decision_tree
-```
-
 #### PIP
 ```
-git clone https://github.com/UBS-IB/bayesian_tree
+git clone https://github.com/o-laurent/bayesian_tree
 cd bayesian_tree
 pip install -e .
 ```
@@ -66,5 +61,3 @@ We include some examples for various uses in the [examples](examples) directory.
 The models are fully compatible with scikit-learn, so you can use them for e.g.
 cross-validation or performance evaluation using scikit-learn functions.
 
-## TODO
-- Add parallelization option (dask)
