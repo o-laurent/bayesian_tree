@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.linalg import expm, inv, eig
+from scipy.linalg import eig, expm, inv
 from sklearn.metrics import accuracy_score, plot_confusion_matrix
 from sklearn.neural_network import MLPClassifier
 
@@ -9,7 +9,7 @@ from bayesian_decision_tree.classification import PerpendicularClassificationTre
 
 def get_covariance(sigma: float, delta: float, theta: np.ndarray) -> np.ndarray:
     theta_p = theta + theta.T
-    return (sigma ** 2.0) * inv(theta_p) * (np.eye(theta.shape[0]) - expm(-theta_p * delta))
+    return (sigma**2.0) * inv(theta_p) * (np.eye(theta.shape[0]) - expm(-theta_p * delta))
 
 
 def sample_gaussian(n: int, covariance: np.ndarray) -> np.ndarray:
@@ -19,8 +19,9 @@ def sample_gaussian(n: int, covariance: np.ndarray) -> np.ndarray:
     return np.dot(a, g)
 
 
-def sample_mean_reversion(n: int, x0: np.ndarray, mu: np.ndarray, sigma: float, delta: float,
-                          theta: np.ndarray) -> np.ndarray:
+def sample_mean_reversion(
+    n: int, x0: np.ndarray, mu: np.ndarray, sigma: float, delta: float, theta: np.ndarray
+) -> np.ndarray:
     if not positive_eigenvalues(theta):
         raise AssertionError("Input theta does not have all positive eigenvalues")
     covariance = get_covariance(sigma, delta, theta)
@@ -42,16 +43,16 @@ def positive_eigenvalues(theta: np.ndarray) -> bool:
 
 
 # demo script for classification (binary or multiclass) using classic, axis-normal splits
-if __name__ == '__main__':
+if __name__ == "__main__":
     np.random.seed(0)
     default_font_size = 16
-    model_type = 'tree'  # it can be 'tree' or 'nn'
-    plt.rc('axes', titlesize=default_font_size)  # fontsize of the axes title
-    plt.rc('axes', labelsize=default_font_size)  # fontsize of the x and y labels
-    plt.rc('xtick', labelsize=default_font_size)  # fontsize of the tick labels
-    plt.rc('ytick', labelsize=default_font_size)  # fontsize of the tick labels
-    plt.rc('legend', fontsize=default_font_size)  # legend fontsize
-    plt.rc('figure', titlesize=default_font_size)  # fontsize of the figure title
+    model_type = "tree"  # it can be 'tree' or 'nn'
+    plt.rc("axes", titlesize=default_font_size)  # fontsize of the axes title
+    plt.rc("axes", labelsize=default_font_size)  # fontsize of the x and y labels
+    plt.rc("xtick", labelsize=default_font_size)  # fontsize of the tick labels
+    plt.rc("ytick", labelsize=default_font_size)  # fontsize of the tick labels
+    plt.rc("legend", fontsize=default_font_size)  # legend fontsize
+    plt.rc("figure", titlesize=default_font_size)  # fontsize of the figure title
     n = 10_000
     n += 1  # used for the deltas
     mu = np.array([[100.0], [110.0], [105.0]])
@@ -62,13 +63,13 @@ if __name__ == '__main__':
     paths = sample_mean_reversion(n, mu, mu, sigma, dt, theta)
     x = paths.T
     plt.plot(x)
-    plt.hlines(mu, 0, n, linestyles=d * ['--'], zorder=100)
-    plt.title('Stock prices')
-    plt.legend(['Stock A', 'Stock B', 'Stock C'])
+    plt.hlines(mu, 0, n, linestyles=d * ["--"], zorder=100)
+    plt.title("Stock prices")
+    plt.legend(["Stock A", "Stock B", "Stock C"])
     ax = plt.gca()
     ax.set_xlim([0, n])
     ax.set_ylim([90, 120])
-    plt.savefig('trading_example_prices.png')
+    plt.savefig("trading_example_prices.png")
     plt.show()
 
     # artificial 4-class data somewhat similar to the Ripley data
@@ -88,18 +89,12 @@ if __name__ == '__main__':
     prior = prior_strength * np.array(n_classes * [1.0]) / n_classes
 
     # model
-    if model_type is 'tree':
-        model = PerpendicularClassificationTree(
-            partition_prior=0.9,
-            prior=prior,
-            delta=0,
-            prune=False)
-    elif model_type is 'nn':
-        model = MLPClassifier(
-            hidden_layer_sizes=(10, 10),
-            random_state=0)
+    if model_type == "tree":
+        model = PerpendicularClassificationTree(partition_prior=0.9, prior=prior, delta=0, prune=False)
+    elif model_type == "nn":
+        model = MLPClassifier(hidden_layer_sizes=(10, 10), random_state=0)
     else:
-        raise AssertionError('Model not included ' + model_type)
+        raise AssertionError("Model not included " + model_type)
 
     # train
     model.fit(X_train, y_train)
@@ -109,11 +104,11 @@ if __name__ == '__main__':
     # compute accuracy
     y_pred_train = model.predict(X_train)
     y_pred_test = model.predict(X_test)
-    positions = (2 * (y_pred_test.reshape((y_pred_test.shape[0], 1)) // 2.0 ** np.arange(d).astype(int) % 2) - 1)
+    positions = 2 * (y_pred_test.reshape((y_pred_test.shape[0], 1)) // 2.0 ** np.arange(d).astype(int) % 2) - 1
     accuracy_train = accuracy_score(y_train, y_pred_train)
     accuracy_test = accuracy_score(y_test, y_pred_test)
-    info_train = 'Train accuracy: {:.4f} %'.format(100 * accuracy_train)
-    info_test = 'Test accuracy:  {:.4f} %'.format(100 * accuracy_test)
+    info_train = f"Train accuracy: {100 * accuracy_train:.4f} %"
+    info_test = f"Test accuracy:  {100 * accuracy_test:.4f} %"
     print(info_train)
     print(info_test)
 
@@ -124,20 +119,23 @@ if __name__ == '__main__':
     ax.set_xlim([0, pnl.shape[0]])
     ax.set_ylim(np.array([-30, 200]))
     plt.grid(True)
-    plt.title('Test period PnL')
-    plt.legend(['Stock A', 'Stock B', 'Stock C'])
-    plt.savefig('trading_example_pnl_' + model_type + '.png')
+    plt.title("Test period PnL")
+    plt.legend(["Stock A", "Stock B", "Stock C"])
+    plt.savefig("trading_example_pnl_" + model_type + ".png")
     plt.show()
 
-    disp = plot_confusion_matrix(model, X_test, y_test,
-                                 display_labels=[''.join(
-                                     np.core.defchararray.add(['-' if x < 0 else '+' for x in (2 * row - 1)],
-                                                              ['A', 'B', 'C'])) for row in
-                                     np.reshape(np.arange(2 ** d), (2 ** d, 1)) // 2.0 ** np.arange(
-                                         d).astype(int) % 2],
-                                 cmap=plt.cm.Blues,
-                                 normalize='true')
-    disp.ax_.set_title('Test period confusion matrix')
+    disp = plot_confusion_matrix(
+        model,
+        X_test,
+        y_test,
+        display_labels=[
+            "".join(np.core.defchararray.add(["-" if x < 0 else "+" for x in (2 * row - 1)], ["A", "B", "C"]))
+            for row in np.reshape(np.arange(2**d), (2**d, 1)) // 2.0 ** np.arange(d).astype(int) % 2
+        ],
+        cmap=plt.cm.Blues,
+        normalize="true",
+    )
+    disp.ax_.set_title("Test period confusion matrix")
     plt.xticks(rotation=90)
-    plt.savefig('trading_example_confusion_matrix_' + model_type + '.png', bbox_inches='tight')
+    plt.savefig("trading_example_confusion_matrix_" + model_type + ".png", bbox_inches="tight")
     plt.show()

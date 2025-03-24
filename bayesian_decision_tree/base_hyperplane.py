@@ -1,5 +1,6 @@
-import numpy as np
 from abc import ABC
+
+import numpy as np
 from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
 from scipy.sparse import csc_matrix, csr_matrix
 
@@ -8,13 +9,14 @@ from bayesian_decision_tree.hyperplane_optimization import HyperplaneOptimizatio
 
 
 class BaseHyperplaneTree(BaseTree, ABC):
-    """
-    Abstract base class of all Bayesian decision tree models using arbitrarily-oriented hyperplane splits
+    """Abstract base class of all Bayesian decision tree models using arbitrarily-oriented hyperplane splits
     (classification and regression). Performs medium-level fitting and prediction tasks and outsources
     the low-level work to subclasses.
     """
 
-    def __init__(self, partition_prior, prior, delta, prune, child_type, is_regression, optimizer, split_precision, level):
+    def __init__(
+        self, partition_prior, prior, delta, prune, child_type, is_regression, optimizer, split_precision, level
+    ):
         BaseTree.__init__(self, partition_prior, prior, delta, prune, child_type, is_regression, split_precision, level)
 
         self.optimizer = optimizer
@@ -25,8 +27,8 @@ class BaseHyperplaneTree(BaseTree, ABC):
         prior = self._get_prior(n_data, n_dim)
 
         if verbose:
-            name = 'level {} {}'.format(self.level, side_name)
-            print('Training {} with {:10} data points'.format(name, n_data))
+            name = f"level {self.level} {side_name}"
+            print(f"Training {name} with {n_data:10} data points")
 
         dense = isinstance(X, np.ndarray)
         if not dense and isinstance(X, csr_matrix):
@@ -48,7 +50,8 @@ class BaseHyperplaneTree(BaseTree, ABC):
             self._compute_log_p_data_split,
             log_p_data_no_split,
             optimizer.search_space_is_unit_hypercube,
-            self.split_precision)
+            self.split_precision,
+        )
 
         # create and run optimizer
         optimizer.solve(optimization_function)
@@ -60,8 +63,9 @@ class BaseHyperplaneTree(BaseTree, ABC):
         self._erase_split_info()
         if optimization_function.best_hyperplane_normal is not None:
             # split data and target to recursively train children
-            projections = X @ optimization_function.best_hyperplane_normal \
-                          - np.dot(optimization_function.best_hyperplane_normal, optimization_function.best_hyperplane_origin)
+            projections = X @ optimization_function.best_hyperplane_normal - np.dot(
+                optimization_function.best_hyperplane_normal, optimization_function.best_hyperplane_origin
+            )
             indices1 = np.where(projections < 0)[0]
             indices2 = np.where(projections >= 0)[0]
 
@@ -92,10 +96,24 @@ class BaseHyperplaneTree(BaseTree, ABC):
                 self.log_p_data_no_split_ = optimization_function.log_p_data_no_split
                 self.best_log_p_data_split_ = optimization_function.best_log_p_data_split
 
-                self.child1_ = self.child_type(self.partition_prior, prior_child1, self.delta,
-                                               self.prune, optimizer, self.split_precision, self.level+1)
-                self.child2_ = self.child_type(self.partition_prior, prior_child2, self.delta,
-                                               self.prune, optimizer, self.split_precision, self.level+1)
+                self.child1_ = self.child_type(
+                    self.partition_prior,
+                    prior_child1,
+                    self.delta,
+                    self.prune,
+                    optimizer,
+                    self.split_precision,
+                    self.level + 1,
+                )
+                self.child2_ = self.child_type(
+                    self.partition_prior,
+                    prior_child2,
+                    self.delta,
+                    self.prune,
+                    optimizer,
+                    self.split_precision,
+                    self.level + 1,
+                )
                 self.child1_._erase_split_info_base()
                 self.child2_._erase_split_info_base()
                 self.child1_._erase_split_info()
@@ -104,13 +122,13 @@ class BaseHyperplaneTree(BaseTree, ABC):
                 # fit children if there is more than one data point (i.e., there is
                 # something to split) and if the targets differ (no point otherwise)
                 if n_data1 > 1 and len(np.unique(y1)) > 1:
-                    self.child1_._fit(X1, y1, verbose, feature_names, 'back ')
+                    self.child1_._fit(X1, y1, verbose, feature_names, "back ")
                 else:
                     self.child1_.posterior_ = self._compute_posterior(y1, prior)
                     self.child1_.n_data_ = n_data1
 
                 if n_data2 > 1 and len(np.unique(y2)) > 1:
-                    self.child2_._fit(X2, y2, verbose, feature_names, 'front')
+                    self.child2_._fit(X2, y2, verbose, feature_names, "front")
                 else:
                     self.child2_.posterior_ = self._compute_posterior(y2, prior)
                     self.child2_.n_data_ = n_data2
@@ -121,7 +139,9 @@ class BaseHyperplaneTree(BaseTree, ABC):
         self.posterior_ = self._compute_posterior(y, prior)
 
     def _compute_child1_and_child2_indices(self, X, indices, dense):
-        projections = X[indices] @ self.best_hyperplane_normal_ - np.dot(self.best_hyperplane_normal_, self.best_hyperplane_origin_)
+        projections = X[indices] @ self.best_hyperplane_normal_ - np.dot(
+            self.best_hyperplane_normal_, self.best_hyperplane_origin_
+        )
         indices1 = np.where(projections < 0)[0]
         indices2 = np.where(projections >= 0)[0]
 
@@ -143,17 +163,16 @@ class BaseHyperplaneTree(BaseTree, ABC):
     def _update_feature_importance(self, feature_importance):
         if self.is_leaf():
             return
-        else:
-            log_p_gain = self.best_log_p_data_split_ - self.log_p_data_no_split_
-            hyperplane_normal = self.best_hyperplane_normal_
+        log_p_gain = self.best_log_p_data_split_ - self.log_p_data_no_split_
+        hyperplane_normal = self.best_hyperplane_normal_
 
-            # the more the normal vector is oriented along a given dimension's axis the more
-            # important that dimension is, so weight log_p_gain with hyperplane_normal[i_dim]
-            # (its absolute value in fact because the sign of the direction is irrelevant)
-            feature_importance += log_p_gain * np.abs(hyperplane_normal)
-            if self.child1_ is not None:
-                self.child1_._update_feature_importance(feature_importance)
-                self.child2_._update_feature_importance(feature_importance)
+        # the more the normal vector is oriented along a given dimension's axis the more
+        # important that dimension is, so weight log_p_gain with hyperplane_normal[i_dim]
+        # (its absolute value in fact because the sign of the direction is irrelevant)
+        feature_importance += log_p_gain * np.abs(hyperplane_normal)
+        if self.child1_ is not None:
+            self.child1_._update_feature_importance(feature_importance)
+            self.child2_._update_feature_importance(feature_importance)
 
     def _erase_split_info(self):
         self.best_hyperplane_normal_ = None
@@ -161,30 +180,34 @@ class BaseHyperplaneTree(BaseTree, ABC):
 
     def __str__(self):
         if not self.is_fitted():
-            return 'Unfitted model'
+            return "Unfitted model"
 
-        return self._str([], '\u251C', '\u2514', '\u2502', '\u2265', None)
+        return self._str([], "\u251c", "\u2514", "\u2502", "\u2265", None)
 
     def _str(self, anchor, VERT_RIGHT, DOWN_RIGHT, BAR, GEQ, is_back_child):
-        anchor_str = ''.join(' ' + a for a in anchor)
-        s = ''
+        anchor_str = "".join(" " + a for a in anchor)
+        s = ""
         if is_back_child is not None:
-            s += anchor_str + ' {:5s}: '.format('back' if is_back_child else 'front')
+            s += anchor_str + " {:5s}: ".format("back" if is_back_child else "front")
 
         if self.is_leaf():
-            s += 'y={}, n={}'.format(self._predict_leaf(), self.n_data_)
+            s += f"y={self._predict_leaf()}, n={self.n_data_}"
             if not self.is_regression:
-                s += ', p(y)={}'.format(self._compute_posterior_mean())
+                s += f", p(y)={self._compute_posterior_mean()}"
         else:
-            s += 'HP(origin={}, normal={})'.format(self.best_hyperplane_origin_, self.best_hyperplane_normal_)
+            s += f"HP(origin={self.best_hyperplane_origin_}, normal={self.best_hyperplane_normal_})"
 
             # 'back' child (the child that is on the side of the hyperplane opposite to the normal vector, or projection < 0)
-            s += '\n'
-            anchor_child1 = [VERT_RIGHT] if len(anchor) == 0 else (anchor[:-1] + [(BAR if is_back_child else '  '), VERT_RIGHT])
+            s += "\n"
+            anchor_child1 = (
+                [VERT_RIGHT] if len(anchor) == 0 else (anchor[:-1] + [(BAR if is_back_child else "  "), VERT_RIGHT])
+            )
             s += self.child1_._str(anchor_child1, VERT_RIGHT, DOWN_RIGHT, BAR, GEQ, True)
 
             # 'front' child (the child that is on same side of the hyperplane as the normal vector, or projection >= 0)
-            s += '\n'
-            anchor_child2 = [DOWN_RIGHT] if len(anchor) == 0 else (anchor[:-1] + [(BAR if is_back_child else '  '), DOWN_RIGHT])
+            s += "\n"
+            anchor_child2 = (
+                [DOWN_RIGHT] if len(anchor) == 0 else (anchor[:-1] + [(BAR if is_back_child else "  "), DOWN_RIGHT])
+            )
             s += self.child2_._str(anchor_child2, VERT_RIGHT, DOWN_RIGHT, BAR, GEQ, False)
         return s

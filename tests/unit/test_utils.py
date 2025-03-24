@@ -30,7 +30,7 @@ class UtilsTest(TestCase):
         # check uniformity
         expected_cos = np.dot(hs[0], hs[1])
         for i in range(1, n_points):
-            cos = np.dot(hs[i-1], hs[i])
+            cos = np.dot(hs[i - 1], hs[i])
             assert_almost_equal(cos, expected_cos)
 
         cos = np.dot(hs[0], hs[-2])
@@ -52,7 +52,7 @@ class UtilsTest(TestCase):
         # check uniformity
         expected_cos = np.dot(hs[0], hs[1])
         for i in range(1, n_points):
-            cos = np.dot(hs[i-1], hs[i])
+            cos = np.dot(hs[i - 1], hs[i])
             assert_almost_equal(cos, expected_cos)
 
         cos = np.dot(hs[0], hs[-2])
@@ -71,16 +71,16 @@ class UtilsTest(TestCase):
 
         # check dimensionality and norms
         self.assertEqual(hs.ndim, 2)
-        self.assertEqual(hs.shape, (n_points, 2+1))
+        self.assertEqual(hs.shape, (n_points, 2 + 1))
         assert_almost_equal(np.linalg.norm(hs, axis=1), 1)
 
         # make sure all quadrants contain approximately the same number of data points
         tolerance_fraction = 0.01
         for quadrant_signs in itertools.product([-1, 1], [-1, 1], [-1, 1]):
             in_quadrant = np.all(hs * quadrant_signs > 0, axis=1).sum()
-            min = n_points / 2**(2+1) * (1-tolerance_fraction)
-            max = n_points / 2**(2+1) * (1+tolerance_fraction)
-            msg = f'Expected a value between {min:.0f} and {max:.0f}, but was {in_quadrant}'
+            min = n_points / 2 ** (2 + 1) * (1 - tolerance_fraction)
+            max = n_points / 2 ** (2 + 1) * (1 + tolerance_fraction)
+            msg = f"Expected a value between {min:.0f} and {max:.0f}, but was {in_quadrant}"
             self.assertTrue(min <= np.sum(in_quadrant) <= max, msg=msg)
 
     def test_hypercube_to_hypersphere_surface_2D_half(self):
@@ -93,7 +93,7 @@ class UtilsTest(TestCase):
 
         # check dimensionality and norms
         self.assertEqual(hs.ndim, 2)
-        self.assertEqual(hs.shape, (n_points, 2+1))
+        self.assertEqual(hs.shape, (n_points, 2 + 1))
         assert_almost_equal(np.linalg.norm(hs, axis=1), 1)
 
         # make sure all quadrants contain approximately the same number of data points
@@ -103,9 +103,9 @@ class UtilsTest(TestCase):
             if quadrant_signs[0] == -1:
                 self.assertEqual(np.sum(in_quadrant), 0)
             else:
-                min = n_points / 2**2 * (1-tolerance_fraction)
-                max = n_points / 2**2 * (1+tolerance_fraction)
-                msg = f'Expected a value between {min:.0f} and {max:.0f} in quadrant {quadrant_signs}, but was {in_quadrant}'
+                min = n_points / 2**2 * (1 - tolerance_fraction)
+                max = n_points / 2**2 * (1 + tolerance_fraction)
+                msg = f"Expected a value between {min:.0f} and {max:.0f} in quadrant {quadrant_signs}, but was {in_quadrant}"
                 self.assertTrue(min <= np.sum(in_quadrant) <= max, msg)
 
     def test_hypercube_to_hypersphere_surface_5D_full(self):
@@ -117,16 +117,16 @@ class UtilsTest(TestCase):
 
         # check dimensionality and norms
         self.assertEqual(hs.ndim, 2)
-        self.assertEqual(hs.shape, (n_points, 5+1))
+        self.assertEqual(hs.shape, (n_points, 5 + 1))
         assert_almost_equal(np.linalg.norm(hs, axis=1), 1)
 
         # make sure all quadrants contain approximately the same number of data points
         tolerance_fraction = 0.02
-        for quadrant_signs in itertools.product(*list(np.tile([-1, 1], (5+1, 1)))):
+        for quadrant_signs in itertools.product(*list(np.tile([-1, 1], (5 + 1, 1)))):
             in_quadrant = np.all(hs * quadrant_signs > 0, axis=1).sum()
-            min = n_points / 2**(5+1) * (1-tolerance_fraction)
-            max = n_points / 2**(5+1) * (1+tolerance_fraction)
-            msg = f'Expected a value between {min:.0f} and {max:.0f}, but was {in_quadrant}'
+            min = n_points / 2 ** (5 + 1) * (1 - tolerance_fraction)
+            max = n_points / 2 ** (5 + 1) * (1 + tolerance_fraction)
+            msg = f"Expected a value between {min:.0f} and {max:.0f}, but was {in_quadrant}"
             self.assertTrue(min <= np.sum(in_quadrant) <= max, msg=msg)
 
     def test_hypercube_to_hypersphere_surface_5D_half(self):
@@ -137,19 +137,19 @@ class UtilsTest(TestCase):
 
         # check dimensionality and norms
         self.assertEqual(hs.ndim, 2)
-        self.assertEqual(hs.shape, (n_points, 5+1))
+        self.assertEqual(hs.shape, (n_points, 5 + 1))
         assert_almost_equal(np.linalg.norm(hs, axis=1), 1)
 
         # make sure all quadrants contain approximately the same number of data points
         tolerance_fraction = 0.01
-        for quadrant_signs in itertools.product(*list(np.tile([-1, 1], (5+1, 1)))):
+        for quadrant_signs in itertools.product(*list(np.tile([-1, 1], (5 + 1, 1)))):
             in_quadrant = np.all(hs * quadrant_signs > 0, axis=1).sum()
             if quadrant_signs[0] == -1:
                 self.assertEqual(np.sum(in_quadrant), 0)
             else:
-                min = n_points / 2**5 * (1-tolerance_fraction)
-                max = n_points / 2**5 * (1+tolerance_fraction)
-                msg = f'Expected a value between {min:.0f} and {max:.0f} in quadrant {quadrant_signs}, but was {in_quadrant}'
+                min = n_points / 2**5 * (1 - tolerance_fraction)
+                max = n_points / 2**5 * (1 + tolerance_fraction)
+                msg = f"Expected a value between {min:.0f} and {max:.0f} in quadrant {quadrant_signs}, but was {in_quadrant}"
                 self.assertTrue(min <= np.sum(in_quadrant) <= max, msg)
 
     def test_hypercube_to_hypersphere_surface_6D_full(self):
@@ -161,16 +161,16 @@ class UtilsTest(TestCase):
 
         # check dimensionality and norms
         self.assertEqual(hs.ndim, 2)
-        self.assertEqual(hs.shape, (n_points, 6+1))
+        self.assertEqual(hs.shape, (n_points, 6 + 1))
         assert_almost_equal(np.linalg.norm(hs, axis=1), 1)
 
         # make sure all quadrants contain approximately the same number of data points
         tolerance_fraction = 0.03
-        for quadrant_signs in itertools.product(*list(np.tile([-1, 1], (6+1, 1)))):
+        for quadrant_signs in itertools.product(*list(np.tile([-1, 1], (6 + 1, 1)))):
             in_quadrant = np.all(hs * quadrant_signs > 0, axis=1).sum()
-            min = n_points / 2**(6+1) * (1-tolerance_fraction)
-            max = n_points / 2**(6+1) * (1+tolerance_fraction)
-            msg = f'Expected a value between {min:.0f} and {max:.0f}, but was {in_quadrant}'
+            min = n_points / 2 ** (6 + 1) * (1 - tolerance_fraction)
+            max = n_points / 2 ** (6 + 1) * (1 + tolerance_fraction)
+            msg = f"Expected a value between {min:.0f} and {max:.0f}, but was {in_quadrant}"
             self.assertTrue(min <= np.sum(in_quadrant) <= max, msg=msg)
 
     def test_hypercube_to_hypersphere_surface_6D_half(self):
@@ -181,17 +181,17 @@ class UtilsTest(TestCase):
 
         # check dimensionality and norms
         self.assertEqual(hs.ndim, 2)
-        self.assertEqual(hs.shape, (n_points, 6+1))
+        self.assertEqual(hs.shape, (n_points, 6 + 1))
         assert_almost_equal(np.linalg.norm(hs, axis=1), 1)
 
         # make sure all quadrants contain approximately the same number of data points
         tolerance_fraction = 0.03
-        for quadrant_signs in itertools.product(*list(np.tile([-1, 1], (6+1, 1)))):
+        for quadrant_signs in itertools.product(*list(np.tile([-1, 1], (6 + 1, 1)))):
             in_quadrant = np.all(hs * quadrant_signs > 0, axis=1).sum()
             if quadrant_signs[0] == -1:
                 self.assertEqual(np.sum(in_quadrant), 0)
             else:
-                min = n_points / 2**6 * (1-tolerance_fraction)
-                max = n_points / 2**6 * (1+tolerance_fraction)
-                msg = f'Expected a value between {min:.0f} and {max:.0f} in quadrant {quadrant_signs}, but was {in_quadrant}'
+                min = n_points / 2**6 * (1 - tolerance_fraction)
+                max = n_points / 2**6 * (1 + tolerance_fraction)
+                msg = f"Expected a value between {min:.0f} and {max:.0f} in quadrant {quadrant_signs}, but was {in_quadrant}"
                 self.assertTrue(min <= np.sum(in_quadrant) <= max, msg)

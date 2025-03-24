@@ -1,10 +1,11 @@
-"""
-This module declares the Bayesian regression tree models:
+"""This module declares the Bayesian regression tree models:
 * PerpendicularRegressionTree
 * HyperplaneRegressionTree
 """
-import numpy as np
+
 from abc import ABC
+
+import numpy as np
 from scipy.special import gammaln
 from sklearn.base import RegressorMixin
 
@@ -14,8 +15,7 @@ from bayesian_decision_tree.base_perpendicular import BasePerpendicularTree
 
 
 class BaseRegressionTree(BaseTree, ABC, RegressorMixin):
-    """
-    Abstract base class of all Bayesian regression trees (perpendicular and hyperplane). Performs
+    """Abstract base class of all Bayesian regression trees (perpendicular and hyperplane). Performs
     medium-level fitting and prediction tasks and outsources the low-level work to subclasses.
     """
 
@@ -24,14 +24,14 @@ class BaseRegressionTree(BaseTree, ABC, RegressorMixin):
 
     def _check_target(self, y):
         if y.ndim != 1:
-            raise ValueError('y should have 1 dimension but has {}'.format(y.ndim))
+            raise ValueError(f"y should have 1 dimension but has {y.ndim}")
 
     def _compute_log_p_data_no_split(self, y, prior):
         y_sum = y.sum()
-        y_squared_sum = (y ** 2).sum()
+        y_squared_sum = (y**2).sum()
         n = len(y)
         mu_post, kappa_post, alpha_post, beta_post = self._compute_posterior_internal(prior, n, y_sum, y_squared_sum)
-        log_p_prior = np.log(1 - self.partition_prior**(1 + self.level))
+        log_p_prior = np.log(1 - self.partition_prior ** (1 + self.level))
         log_p_data = self._compute_log_p_data(prior, alpha_post, beta_post, kappa_post, n)
 
         return log_p_prior + log_p_data
@@ -43,9 +43,9 @@ class BaseRegressionTree(BaseTree, ABC, RegressorMixin):
         y_sum1 = y.cumsum()[:-1]
         y_sum2 = y.sum() - y_sum1
         y_squared_sum1 = (y[:-1] ** 2).cumsum()
-        y_squared_sum2 = (y ** 2).sum() - y_squared_sum1
+        y_squared_sum2 = (y**2).sum() - y_squared_sum1
 
-        if len(split_indices) != len(y)-1:
+        if len(split_indices) != len(y) - 1:
             # we are *not* splitting between all data points -> indexing necessary
             split_indices_minus_1 = split_indices - 1
 
@@ -60,7 +60,7 @@ class BaseRegressionTree(BaseTree, ABC, RegressorMixin):
         mu2, kappa2, alpha2, beta2 = self._compute_posterior_internal(prior, n2, y_sum2, y_squared_sum2)
 
         n_splits = len(split_indices)
-        log_p_prior = np.log(self.partition_prior**(1+self.level) / (n_splits * n_dim))
+        log_p_prior = np.log(self.partition_prior ** (1 + self.level) / (n_splits * n_dim))
 
         log_p_data1 = self._compute_log_p_data(prior, alpha1, beta1, kappa1, n1)
         log_p_data2 = self._compute_log_p_data(prior, alpha2, beta2, kappa2, n2)
@@ -70,15 +70,14 @@ class BaseRegressionTree(BaseTree, ABC, RegressorMixin):
     def _get_prior(self, n_data, n_dim):
         if self.prior is not None:
             return self.prior
-        else:
-            # TODO: use actual data to compute mu and tau
-            prior_pseudo_observation_count = max(1, n_data//100)
-            mu = 0
-            tau = 1
-            kappa = prior_pseudo_observation_count
-            alpha = prior_pseudo_observation_count/2
-            beta = alpha/tau
-            return np.array([mu, kappa, alpha, beta])
+        # TODO: use actual data to compute mu and tau
+        prior_pseudo_observation_count = max(1, n_data // 100)
+        mu = 0
+        tau = 1
+        kappa = prior_pseudo_observation_count
+        alpha = prior_pseudo_observation_count / 2
+        beta = alpha / tau
+        return np.array([mu, kappa, alpha, beta])
 
     def _compute_posterior(self, y, prior, delta=1):
         if delta == 0:
@@ -86,7 +85,7 @@ class BaseRegressionTree(BaseTree, ABC, RegressorMixin):
 
         n = len(y)
         y_sum = y.sum()
-        y_squared_sum = (y ** 2).sum()
+        y_squared_sum = (y**2).sum()
 
         return self._compute_posterior_internal(prior, n, y_sum, y_squared_sum, delta)
 
@@ -94,12 +93,15 @@ class BaseRegressionTree(BaseTree, ABC, RegressorMixin):
         mu, kappa, alpha, beta = prior
 
         # see https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf, equations (86) - (89)
-        n_delta = n*delta
+        n_delta = n * delta
         kappa_post = kappa + n_delta
         mu_post = (kappa * mu + n_delta * y_sum / n) / kappa_post
-        alpha_post = alpha + 0.5*n_delta
-        beta_post = beta + 0.5 * delta * (y_squared_sum - y_sum ** 2 / n) + 0.5 * kappa * n_delta * (
-                    y_sum / n - mu) ** 2 / (kappa + n)
+        alpha_post = alpha + 0.5 * n_delta
+        beta_post = (
+            beta
+            + 0.5 * delta * (y_squared_sum - y_sum**2 / n)
+            + 0.5 * kappa * n_delta * (y_sum / n - mu) ** 2 / (kappa + n)
+        )
 
         return mu_post, kappa_post, alpha_post, beta_post
 
@@ -110,10 +112,14 @@ class BaseRegressionTree(BaseTree, ABC, RegressorMixin):
         mu, kappa, alpha, beta = prior
 
         # see https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf, equation (95)
-        return (gammaln(alpha_new) - gammaln(alpha)
-                + alpha*np.log(beta) - alpha_new*np.log(beta_new)
-                + 0.5*np.log(kappa/kappa_new)
-                - 0.5*n_new*np.log(2*np.pi))
+        return (
+            gammaln(alpha_new)
+            - gammaln(alpha)
+            + alpha * np.log(beta)
+            - alpha_new * np.log(beta_new)
+            + 0.5 * np.log(kappa / kappa_new)
+            - 0.5 * n_new * np.log(2 * np.pi)
+        )
 
     def _predict_leaf(self):
         # predict posterior mean
@@ -125,8 +131,7 @@ class BaseRegressionTree(BaseTree, ABC, RegressorMixin):
 
 
 class PerpendicularRegressionTree(BasePerpendicularTree, BaseRegressionTree):
-    """
-    Bayesian regression tree using axes-normal splits ("perpendicular").
+    """Bayesian regression tree using axes-normal splits ("perpendicular").
     Uses a Normal-gamma(mu, kappa, alpha, beta) prior assuming unknown mean and unknown variance.
 
     Parameters
@@ -162,13 +167,13 @@ class PerpendicularRegressionTree(BasePerpendicularTree, BaseRegressionTree):
 
     level : DO NOT SET, ONLY USED BY SUBCLASSES
 
-    See also
+    See Also:
     --------
     demo_regression_perpendicular.py
     PerpendicularClassificationTree
     HyperplaneRegressionTree
 
-    References
+    References:
     ----------
 
     .. [1] https://en.wikipedia.org/wiki/Normal-gamma_distribution
@@ -177,7 +182,7 @@ class PerpendicularRegressionTree(BasePerpendicularTree, BaseRegressionTree):
 
     .. [3] https://en.wikipedia.org/wiki/Conjugate_prior#Continuous_distributions
 
-    Examples
+    Examples:
     --------
     It is usually convenient to compute the prior hyperparameters as follows:
 
@@ -201,13 +206,14 @@ class PerpendicularRegressionTree(BasePerpendicularTree, BaseRegressionTree):
 
     def __init__(self, partition_prior=0.99, prior=None, delta=0, prune=False, split_precision=0.0, level=0):
         child_type = PerpendicularRegressionTree
-        BasePerpendicularTree.__init__(self, partition_prior, prior, delta, prune, child_type, True, split_precision, level)
+        BasePerpendicularTree.__init__(
+            self, partition_prior, prior, delta, prune, child_type, True, split_precision, level
+        )
         BaseRegressionTree.__init__(self, partition_prior, prior, delta, prune, child_type, split_precision, level)
 
 
 class HyperplaneRegressionTree(BaseHyperplaneTree, BaseRegressionTree):
-    """
-    Bayesian regression tree using arbitrarily-oriented hyperplane splits.
+    """Bayesian regression tree using arbitrarily-oriented hyperplane splits.
     Uses a Normal-gamma(mu, kappa, alpha, beta) prior assuming unknown mean and unknown variance.
 
     Parameters
@@ -253,13 +259,13 @@ class HyperplaneRegressionTree(BaseHyperplaneTree, BaseRegressionTree):
 
     level : DO NOT SET, ONLY USED BY SUBCLASSES
 
-    See also
+    See Also:
     --------
     demo_regression_hyperplane.py
     HyperplaneClassificationTree
     PerpendicularRegressionTree
 
-    References
+    References:
     ----------
 
     .. [1] https://en.wikipedia.org/wiki/Normal-gamma_distribution
@@ -268,7 +274,7 @@ class HyperplaneRegressionTree(BaseHyperplaneTree, BaseRegressionTree):
 
     .. [3] https://en.wikipedia.org/wiki/Conjugate_prior#Continuous_distributions
 
-    Examples
+    Examples:
     --------
     It is usually convenient to compute the prior hyperparameters in the same manner as for
     the perpendicular case, see PerpendicularRegressionTree.
@@ -276,7 +282,11 @@ class HyperplaneRegressionTree(BaseHyperplaneTree, BaseRegressionTree):
     See `demo_regression_hyperplane.py`.
     """
 
-    def __init__(self, partition_prior=0.99, prior=None, delta=0, prune=False, optimizer=None, split_precision=0.0, level=0):
+    def __init__(
+        self, partition_prior=0.99, prior=None, delta=0, prune=False, optimizer=None, split_precision=0.0, level=0
+    ):
         child_type = HyperplaneRegressionTree
-        BaseHyperplaneTree.__init__(self, partition_prior, prior, delta, prune, child_type, True, optimizer, split_precision, level)
+        BaseHyperplaneTree.__init__(
+            self, partition_prior, prior, delta, prune, child_type, True, optimizer, split_precision, level
+        )
         BaseRegressionTree.__init__(self, partition_prior, prior, delta, prune, child_type, split_precision, level)

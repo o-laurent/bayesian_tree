@@ -1,10 +1,11 @@
-"""
-This module declares the Bayesian classification tree models:
+"""This module declares the Bayesian classification tree models:
 * PerpendicularClassificationTree
 * HyperplaneClassificationTree
 """
-import numpy as np
+
 from abc import ABC
+
+import numpy as np
 from sklearn.base import ClassifierMixin
 
 from bayesian_decision_tree.base import BaseTree
@@ -14,8 +15,7 @@ from bayesian_decision_tree.utils import multivariate_betaln
 
 
 class BaseClassificationTree(BaseTree, ABC, ClassifierMixin):
-    """
-    Abstract base class of all Bayesian classification trees (perpendicular and hyperplane). Performs
+    """Abstract base class of all Bayesian classification trees (perpendicular and hyperplane). Performs
     medium-level fitting and prediction tasks and outsources the low-level work to subclasses.
     """
 
@@ -30,12 +30,11 @@ class BaseClassificationTree(BaseTree, ABC, ClassifierMixin):
         X : array-like, scipy.sparse.csc_matrix, scipy.sparse.csr_matrix or pandas.DataFrame, shape = [n_samples, n_features]
             The input samples.
 
-        Returns
+        Returns:
         -------
         p : array of shape = [n_samples, n_classes]
             The class probabilities of the input samples.
         """
-
         # input transformation and checks
         X, _ = self._normalize_data_and_feature_names(X)
         self._ensure_is_fitted(X)
@@ -47,23 +46,22 @@ class BaseClassificationTree(BaseTree, ABC, ClassifierMixin):
 
     def _check_target(self, y):
         if y.ndim != 1:
-            raise ValueError('y should have 1 dimension but has {}'.format(y.ndim))
+            raise ValueError(f"y should have 1 dimension but has {y.ndim}")
 
         n_classes = len(self.prior)
         if not np.all(np.unique(y) == np.arange(0, n_classes)):
-            raise ValueError('Expected target values 0..{} but found {}..{}'.format(n_classes - 1, y.min(), y.max()))
+            raise ValueError(f"Expected target values 0..{n_classes - 1} but found {y.min()}..{y.max()}")
 
     def _get_prior(self, n_data, n_dim):
         if self.prior is not None:
             return self.prior
-        else:
-            prior_pseudo_observation_count = max(1, n_data//100)
-            return prior_pseudo_observation_count * np.ones(n_dim)
+        prior_pseudo_observation_count = max(1, n_data // 100)
+        return prior_pseudo_observation_count * np.ones(n_dim)
 
     def _compute_log_p_data_no_split(self, y, prior):
         posterior = self._compute_posterior(y, prior)
 
-        log_p_prior = np.log(1-self.partition_prior**(1+self.level))
+        log_p_prior = np.log(1 - self.partition_prior ** (1 + self.level))
         log_p_data = multivariate_betaln(posterior) - multivariate_betaln(prior)
 
         return log_p_prior + log_p_data
@@ -75,11 +73,11 @@ class BaseClassificationTree(BaseTree, ABC, ClassifierMixin):
         for i in range(n_classes):
             k1_and_total = (y == i).cumsum()
             total = k1_and_total[-1]
-            k1[i] = k1_and_total[split_indices-1]
+            k1[i] = k1_and_total[split_indices - 1]
             k2[i] = total - k1[i]
 
         n_splits = len(split_indices)
-        log_p_prior = np.log(self.partition_prior**(1+self.level) / (n_splits * n_dim))
+        log_p_prior = np.log(self.partition_prior ** (1 + self.level) / (n_splits * n_dim))
 
         betaln_prior = multivariate_betaln(prior)
         log_p_data1 = self._compute_log_p_data(k1, prior, betaln_prior)
@@ -95,7 +93,7 @@ class BaseClassificationTree(BaseTree, ABC, ClassifierMixin):
         y_reshaped = np.broadcast_to(y, (len(prior), len(y)))
         classes = np.arange(len(prior)).reshape(-1, 1)
         k = np.sum(y_reshaped == classes, axis=1)
-        posterior = prior + delta*k
+        posterior = prior + delta * k
 
         return posterior
 
@@ -105,7 +103,7 @@ class BaseClassificationTree(BaseTree, ABC, ClassifierMixin):
     def _compute_log_p_data(self, k, prior, betaln_prior):
         # see https://www.cs.ubc.ca/~murphyk/Teaching/CS340-Fall06/reading/bernoulli.pdf, equation (42)
         # which can be expressed as a fraction of beta functions
-        return multivariate_betaln(prior+k) - betaln_prior
+        return multivariate_betaln(prior + k) - betaln_prior
 
     def _predict_leaf(self):
         # predict class
@@ -117,8 +115,7 @@ class BaseClassificationTree(BaseTree, ABC, ClassifierMixin):
 
 
 class PerpendicularClassificationTree(BasePerpendicularTree, BaseClassificationTree):
-    """
-    Bayesian binary or multiclass classification tree. Uses a Dirichlet prior (a
+    """Bayesian binary or multiclass classification tree. Uses a Dirichlet prior (a
     multivariate generalization of the Beta prior for more than 2 variables).
 
     Parameters
@@ -161,33 +158,34 @@ class PerpendicularClassificationTree(BasePerpendicularTree, BaseClassificationT
 
     level : DO NOT SET, ONLY USED BY SUBCLASSES
 
-    See also
+    See Also:
     --------
     demo_classification_perpendicular.py
     PerpendicularRegressionTree
     HyperplaneClassificationTree
 
-    References
+    References:
     ----------
 
     .. [1] https://en.wikipedia.org/wiki/Dirichlet_distribution#Conjugate_to_categorical/multinomial
 
     .. [2] https://en.wikipedia.org/wiki/Conjugate_prior#Discrete_distributions
 
-    Examples
+    Examples:
     --------
     See `demo_classification_perpendicular.py`.
     """
 
     def __init__(self, partition_prior=0.99, prior=None, delta=0, prune=False, split_precision=0.0, level=0):
         child_type = PerpendicularClassificationTree
-        BasePerpendicularTree.__init__(self, partition_prior, prior, delta, prune, child_type, False, split_precision, level)
+        BasePerpendicularTree.__init__(
+            self, partition_prior, prior, delta, prune, child_type, False, split_precision, level
+        )
         BaseClassificationTree.__init__(self, partition_prior, prior, delta, prune, child_type, split_precision, level)
 
 
 class HyperplaneClassificationTree(BaseHyperplaneTree, BaseClassificationTree):
-    """
-    Bayesian binary or multiclass classification tree using arbitrarily-oriented
+    """Bayesian binary or multiclass classification tree using arbitrarily-oriented
     hyperplane splits. Uses a Dirichlet prior (a multivariate generalization
     of the Beta prior for more than 2 variables).
 
@@ -241,25 +239,29 @@ class HyperplaneClassificationTree(BaseHyperplaneTree, BaseClassificationTree):
 
     level : DO NOT SET, ONLY USED BY SUBCLASSES
 
-    See also
+    See Also:
     --------
     demo_classification_hyperplane.py
     HyperplaneRegressionTree
     PerpendicularClassificationTree
 
-    References
+    References:
     ----------
 
     .. [1] https://en.wikipedia.org/wiki/Dirichlet_distribution#Conjugate_to_categorical/multinomial
 
     .. [2] https://en.wikipedia.org/wiki/Conjugate_prior#Discrete_distributions
 
-    Examples
+    Examples:
     --------
     See `demo_classification_perpendicular.py`.
     """
 
-    def __init__(self, partition_prior=0.99, prior=None, delta=None, prune=False, optimizer=None, split_precision=0.0, level=0):
+    def __init__(
+        self, partition_prior=0.99, prior=None, delta=None, prune=False, optimizer=None, split_precision=0.0, level=0
+    ):
         child_type = HyperplaneClassificationTree
-        BaseHyperplaneTree.__init__(self, partition_prior, prior, delta, prune, child_type, False, optimizer, split_precision, level)
+        BaseHyperplaneTree.__init__(
+            self, partition_prior, prior, delta, prune, child_type, False, optimizer, split_precision, level
+        )
         BaseClassificationTree.__init__(self, partition_prior, prior, delta, prune, child_type, split_precision, level)

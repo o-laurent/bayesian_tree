@@ -6,13 +6,10 @@ from bayesian_decision_tree.hyperplane_optimization import SimulatedAnnealingOpt
 from examples import helper
 
 # demo script for classification (binary or multiclass) using arbitrarily oriented hyperplanes
-if __name__ == '__main__':
+if __name__ == "__main__":
     # proxies (in case you're running this behind a firewall)
     args = helper.parse_args()
-    proxies = {
-        'http': args.http_proxy,
-        'https': args.https_proxy
-    }
+    proxies = {"http": args.http_proxy, "https": args.https_proxy}
 
     # data set: uncomment one of the following sections
 
@@ -47,10 +44,10 @@ if __name__ == '__main__':
     y_train[(X_train[:, 0] >= 2) & (X_train[:, 0] < 3) & (X_train[:, 1] <= 1)] = 1
     y_train[(X_train[:, 0] >= 3)] = 1
 
-    angle = 30*np.pi/180
+    angle = 30 * np.pi / 180
     X_train_rot = X_train.copy()
-    X_train_rot[:, 0] = np.cos(angle)*X_train[:, 0] + np.sin(angle)*X_train[:, 1]
-    X_train_rot[:, 1] = -np.sin(angle)*X_train[:, 0] + np.cos(angle)*X_train[:, 1]
+    X_train_rot[:, 0] = np.cos(angle) * X_train[:, 0] + np.sin(angle) * X_train[:, 1]
+    X_train_rot[:, 1] = -np.sin(angle) * X_train[:, 0] + np.cos(angle) * X_train[:, 1]
     X_train = X_train_rot
 
     train = np.hstack((X_train, y_train))
@@ -77,26 +74,23 @@ if __name__ == '__main__':
 
     # model
     model = HyperplaneClassificationTree(
-        partition_prior=0.9,
-        prior=prior,
-        delta=0,
-        prune=True,
-        optimizer=SimulatedAnnealingOptimizer(10, 10, 0.9, 666))
+        partition_prior=0.9, prior=prior, delta=0, prune=True, optimizer=SimulatedAnnealingOptimizer(10, 10, 0.9, 666)
+    )
 
     model.fit(X_train, y_train)
     # train
     print(model)
     print()
-    print('Tree depth and number of leaves: {}, {}'.format(model.get_depth(), model.get_n_leaves()))
-    print('Feature importance:', model.feature_importance())
+    print(f"Tree depth and number of leaves: {model.get_depth()}, {model.get_n_leaves()}")
+    print("Feature importance:", model.feature_importance())
 
     # compute accuracy
     y_pred_train = model.predict(X_train)
     y_pred_test = model.predict(X_test)
     accuracy_train = accuracy_score(y_train, y_pred_train)
     accuracy_test = accuracy_score(y_test, y_pred_test)
-    info_train = 'Train accuracy: {:.4f} %'.format(100 * accuracy_train)
-    info_test = 'Test accuracy:  {:.4f} %'.format(100 * accuracy_test)
+    info_train = f"Train accuracy: {100 * accuracy_train:.4f} %"
+    info_test = f"Test accuracy:  {100 * accuracy_test:.4f} %"
     print(info_train)
     print(info_test)
 

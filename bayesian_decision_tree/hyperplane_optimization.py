@@ -1,20 +1,29 @@
-import numpy as np
 from abc import ABC, abstractmethod
-from numpy.random import RandomState
-from scipy.sparse import csr_matrix, csc_matrix
 
-from bayesian_decision_tree.utils import r2_series_generator, hypercube_to_hypersphere_surface
+import numpy as np
+from numpy.random import RandomState
+from scipy.sparse import csc_matrix, csr_matrix
+
+from bayesian_decision_tree.utils import hypercube_to_hypersphere_surface, r2_series_generator
 
 
 class HyperplaneOptimizationFunction:
-    """
-    The function to optimize for hyperplane trees. This is a function of `n_dim` variables representing
+    """The function to optimize for hyperplane trees. This is a function of `n_dim` variables representing
     the normal vector of a hyperplane in `n_dim` dimensions. Given such a hyperplane normal the function
     computes the optimum split location (i.e., the origin of the hyperplane) in the data such that the
     data likelihood is maximized.
     """
 
-    def __init__(self, X, y, prior, compute_log_p_data_split, log_p_data_no_split, search_space_is_unit_hypercube, split_precision):
+    def __init__(
+        self,
+        X,
+        y,
+        prior,
+        compute_log_p_data_split,
+        log_p_data_no_split,
+        search_space_is_unit_hypercube,
+        split_precision,
+    ):
         self.X = X
         self.y = y
         self.prior = prior
@@ -50,7 +59,9 @@ class HyperplaneOptimizationFunction:
         # compute distance of all points to the hyperplane: https://mathinsight.org/distance_point_plane
         projections = self.X @ hyperplane_normal  # up to an additive constant which doesn't matter to distance ordering
         sort_indices = np.argsort(projections)
-        split_indices = 1 + np.where(np.abs(np.diff(projections)) > self.split_precision)[0]  # we can only split between *different* data points
+        split_indices = (
+            1 + np.where(np.abs(np.diff(projections)) > self.split_precision)[0]
+        )  # we can only split between *different* data points
         if len(split_indices) == 0:
             # no split possible along this dimension
             return -self.log_p_data_no_split
@@ -63,7 +74,7 @@ class HyperplaneOptimizationFunction:
         i_max = log_p_data_split.argmax()
         if log_p_data_split[i_max] >= self.best_log_p_data_split:
             best_split_index = split_indices[i_max]
-            p1 = self.X[sort_indices[best_split_index-1]]
+            p1 = self.X[sort_indices[best_split_index - 1]]
             p2 = self.X[sort_indices[best_split_index]]
             if not dense:
                 p1 = p1.toarray()[0]
@@ -90,17 +101,17 @@ class HyperplaneOptimizationFunction:
 
 class StrMixin:
     """Auto-generate `__str__()` and `__repr__()` from attributes."""
+
     def __str__(self):
-        attributes = ['{}={}'.format(k, v) for k, v in self.__dict__.items()]
-        return '{}[{}]'.format(type(self).__name__, ', '.join(attributes))
+        attributes = [f"{k}={v}" for k, v in self.__dict__.items()]
+        return "{}[{}]".format(type(self).__name__, ", ".join(attributes))
 
     def __repr__(self):
         return self.__str__()
 
 
 class HyperplaneOptimizer(ABC, StrMixin):
-    """
-    Abstract base class of all hyperplane optimizers.
+    """Abstract base class of all hyperplane optimizers.
     """
 
     def __init__(self, search_space_is_unit_hypercube):
@@ -114,7 +125,7 @@ class HyperplaneOptimizer(ABC, StrMixin):
 class ScipyOptimizer(HyperplaneOptimizer):
     """An optimizer using one of the scipy global optimizers, see [1].
 
-    References
+    References:
     ----------
     .. [1] https://docs.scipy.org/doc/scipy/reference/optimize.html#global-optimization
     """
@@ -131,20 +142,17 @@ class ScipyOptimizer(HyperplaneOptimizer):
         # (half) hypersphere uniformly later on)
         X = optimization_function.X
         n_dim = X.shape[1]
-        unit_hypercube_bounds = np.vstack((np.zeros(n_dim-1), np.ones(n_dim-1))).T
+        unit_hypercube_bounds = np.vstack((np.zeros(n_dim - 1), np.ones(n_dim - 1))).T
 
         solver = self.solver_type(
-            func=optimization_function.compute,
-            bounds=unit_hypercube_bounds,
-            seed=self.seed,
-            **self.extra_solver_kwargs)
+            func=optimization_function.compute, bounds=unit_hypercube_bounds, seed=self.seed, **self.extra_solver_kwargs
+        )
 
         solver.solve()
 
 
 class RandomTwoPointOptimizer(HyperplaneOptimizer):
-    """
-    An optimizer randomly choosing two points of different classes to construct
+    """An optimizer randomly choosing two points of different classes to construct
     a bisecting hyperplane (experimental).
     TODO: Complete
     """
@@ -162,8 +170,9 @@ class RandomTwoPointOptimizer(HyperplaneOptimizer):
         y = optimization_function.y
 
         if np.any(np.round(y) != y):
-            raise TypeError('Cannot use {} for regression problems as there are no classes to pick points from'.format(
-                RandomTwoPointOptimizer.__name__))
+            raise TypeError(
+                f"Cannot use {RandomTwoPointOptimizer.__name__} for regression problems as there are no classes to pick points from"
+            )
 
         dense = isinstance(X, np.ndarray)
 
@@ -196,7 +205,7 @@ class RandomTwoPointOptimizer(HyperplaneOptimizer):
                 p1 = p1.toarray()[0]
                 p2 = p2.toarray()[0]
 
-            normal = p2-p1
+            normal = p2 - p1
             if normal[0] < 0:
                 normal *= -1  # make sure the first coordinate is positive to match the scipy search space
 
@@ -204,8 +213,7 @@ class RandomTwoPointOptimizer(HyperplaneOptimizer):
 
 
 class RandomHyperplaneOptimizer(HyperplaneOptimizer):
-    """
-    An optimizer generating hyperplanes with random orientation
+    """An optimizer generating hyperplanes with random orientation
     in space (experimental).
     TODO: Complete
     """
@@ -228,8 +236,7 @@ class RandomHyperplaneOptimizer(HyperplaneOptimizer):
 
 
 class QuasiRandomHyperplaneOptimizer(HyperplaneOptimizer):
-    """
-    An optimizer generating hyperplanes with quasi-random orientation
+    """An optimizer generating hyperplanes with quasi-random orientation
     in space, see
     http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
     """
@@ -242,7 +249,7 @@ class QuasiRandomHyperplaneOptimizer(HyperplaneOptimizer):
     def solve(self, optimization_function):
         X = optimization_function.X
         n_dim = X.shape[1]
-        n_dim_surface = n_dim-1
+        n_dim_surface = n_dim - 1
 
         # quasi-random R2 sequence
         r2gen = r2_series_generator(n_dim_surface)
@@ -263,14 +270,14 @@ class OptunaOptimizer(HyperplaneOptimizer):
         from optuna.logging import set_verbosity
         from optuna.samplers import TPESampler
 
-        study = create_study(direction='minimize', sampler=TPESampler(self.seed))
+        study = create_study(direction="minimize", sampler=TPESampler(self.seed))
         n_dim = optimization_function.X.shape[1]
-        n_dim_surface = n_dim-1
+        n_dim_surface = n_dim - 1
 
         def objective(trial):
             uniform = np.zeros(n_dim_surface)
             for i in range(n_dim_surface):
-                uniform[i] = trial.suggest_uniform(f'uniform[{i}]', 0, 1)
+                uniform[i] = trial.suggest_uniform(f"uniform[{i}]", 0, 1)
 
             return optimization_function.compute(uniform)
 
@@ -279,8 +286,7 @@ class OptunaOptimizer(HyperplaneOptimizer):
 
 
 class SimulatedAnnealingOptimizer(HyperplaneOptimizer):
-    """
-    A simple simulated annealing optimizer (experimental).
+    """A simple simulated annealing optimizer (experimental).
     TODO: Complete
     """
 
@@ -296,7 +302,7 @@ class SimulatedAnnealingOptimizer(HyperplaneOptimizer):
         rand = RandomState(self.seed)
 
         X = optimization_function.X
-        n_dim = X.shape[1]-1
+        n_dim = X.shape[1] - 1
 
         candidates = {}
 
@@ -319,7 +325,7 @@ class SimulatedAnnealingOptimizer(HyperplaneOptimizer):
                 values_sorted = sorted(candidates.keys())
                 best_value = values_sorted[0]
                 for i in range(self.n_keep):
-                    i_candidate = i*len(values_sorted)//self.n_keep
+                    i_candidate = i * len(values_sorted) // self.n_keep
                     candidate = candidates[values_sorted[i_candidate]]
                     # perturbation = ranges * rand.uniform(-1, 1, len(ranges))
                     perturbation = f * rand.uniform(-1, 1, len(ranges))
@@ -332,7 +338,7 @@ class SimulatedAnnealingOptimizer(HyperplaneOptimizer):
 
             # only keep the best candidates
             values_sorted = sorted(candidates.keys())
-            values_sorted = values_sorted[:self.n_keep]
+            values_sorted = values_sorted[: self.n_keep]
             if values_sorted[0] < best_value:
                 no_improvements = 0
             else:
@@ -342,8 +348,7 @@ class SimulatedAnnealingOptimizer(HyperplaneOptimizer):
 
 
 class GradientDescentOptimizer(HyperplaneOptimizer):
-    """
-    A simple gradient descent optimizer (experimental).
+    """A simple gradient descent optimizer (experimental).
     TODO: Complete
     """
 
@@ -355,7 +360,7 @@ class GradientDescentOptimizer(HyperplaneOptimizer):
 
     def solve(self, optimization_function):
         X = optimization_function.X
-        n_dim = X.shape[1]-1
+        n_dim = X.shape[1] - 1
 
         rand = RandomState(666)
 
@@ -377,7 +382,7 @@ class GradientDescentOptimizer(HyperplaneOptimizer):
                 values_sorted = sorted(candidates.keys())
                 best_value = values_sorted[0]
                 for i in range(self.n_keep):
-                    i_candidate = i*len(values_sorted)//self.n_keep
+                    i_candidate = i * len(values_sorted) // self.n_keep
                     value = values_sorted[i_candidate]
                     candidate = candidates[value]
 
@@ -433,7 +438,7 @@ class GradientDescentOptimizer(HyperplaneOptimizer):
 
             # only keep the best candidates
             values_sorted = sorted(candidates.keys())
-            values_sorted = values_sorted[:self.n_keep]
+            values_sorted = values_sorted[: self.n_keep]
             if values_sorted[0] < best_value:
                 no_improvements = 0
             else:

@@ -5,7 +5,7 @@ from numpy.testing import assert_array_equal
 from sklearn.metrics import mean_squared_error
 
 from bayesian_decision_tree.regression import PerpendicularRegressionTree
-from tests.unit.helper import data_matrix_transforms, create_regression_trees
+from tests.unit.helper import create_regression_trees, data_matrix_transforms
 
 
 class RegressionTreeTest(TestCase):
@@ -14,10 +14,10 @@ class RegressionTreeTest(TestCase):
         sd_prior = 1
         prior_obs = 0.01
         kappa = prior_obs
-        alpha = prior_obs/2
+        alpha = prior_obs / 2
         var_prior = sd_prior**2
-        tau_prior = 1/var_prior
-        beta = alpha/tau_prior
+        tau_prior = 1 / var_prior
+        beta = alpha / tau_prior
 
         prior = np.array([mu, kappa, alpha, beta])
 
@@ -34,28 +34,30 @@ class RegressionTreeTest(TestCase):
         sd_prior = 1
         prior_obs = 0.01
         kappa = prior_obs
-        alpha = prior_obs/2
+        alpha = prior_obs / 2
         var_prior = sd_prior**2
-        tau_prior = 1/var_prior
-        beta = alpha/tau_prior
+        tau_prior = 1 / var_prior
+        beta = alpha / tau_prior
 
         prior = np.array([mu, kappa, alpha, beta])
 
         for data_matrix_transform in data_matrix_transforms:
             for model in create_regression_trees(prior, 0.5):
-                Xy = np.array([
-                    [0.0, 0.0, 0.1],
-                    [0.0, 1.0, 1.0],
-                    [1.0, 1.0, 0.1],
-                    [1.0, 0.0, 1.0],
-                    [1.0, 0.0, 0.1],
-                ])
+                Xy = np.array(
+                    [
+                        [0.0, 0.0, 0.1],
+                        [0.0, 1.0, 1.0],
+                        [1.0, 1.0, 0.1],
+                        [1.0, 0.0, 1.0],
+                        [1.0, 0.0, 0.1],
+                    ]
+                )
                 X = Xy[:, :-1]
                 y = Xy[:, -1]
 
                 X = data_matrix_transform(X)
 
-                print('Testing {}'.format(type(model).__name__))
+                print(f"Testing {type(model).__name__}")
                 model.fit(X, y)
                 print(model)
 
@@ -89,27 +91,29 @@ class RegressionTreeTest(TestCase):
             sd_prior = 1
             prior_obs = 0.01
             kappa = prior_obs
-            alpha = prior_obs/2
+            alpha = prior_obs / 2
             var_prior = sd_prior**2
-            tau_prior = 1/var_prior
-            beta = alpha/tau_prior
+            tau_prior = 1 / var_prior
+            beta = alpha / tau_prior
 
             prior = np.array([mu, kappa, alpha, beta])
 
             for model in create_regression_trees(prior, 0.5):
-                Xy = np.array([
-                    [0.0, 0.0, 0],
-                    [0.1, 0.1, 1.3],
-                    [0.9, 0.9, 0],
-                    [1.0, 1.0, 1.2],
-                    [1.0, 1.0, 0],
-                ])
+                Xy = np.array(
+                    [
+                        [0.0, 0.0, 0],
+                        [0.1, 0.1, 1.3],
+                        [0.9, 0.9, 0],
+                        [1.0, 1.0, 1.2],
+                        [1.0, 1.0, 0],
+                    ]
+                )
                 X = Xy[:, :-1]
                 y = Xy[:, -1]
 
                 X = data_matrix_transform(X)
 
-                print('Testing {}'.format(type(model).__name__))
+                print(f"Testing {type(model).__name__}")
                 model.fit(X, y)
                 print(model)
 
@@ -130,7 +134,7 @@ class RegressionTreeTest(TestCase):
                 mean = y.mean()
                 mu, kappa, alpha, beta = prior
                 kappa_post = kappa + n
-                mu_post = (kappa*mu + n*mean) / kappa_post
+                mu_post = (kappa * mu + n * mean) / kappa_post
 
                 expected = np.array([mu_post, mu_post, mu_post, mu_post])
                 self.assertEqual(model.predict([[0.0, 0.5]]), np.expand_dims(expected[0], 0))
@@ -139,7 +143,10 @@ class RegressionTreeTest(TestCase):
                 self.assertEqual(model.predict([[1.0, 0.5]]), np.expand_dims(expected[3], 0))
 
                 for data_matrix_transform2 in data_matrix_transforms:
-                    assert_array_equal(model.predict(data_matrix_transform2([[0.0, 0.5], [0.49, 0.5], [0.51, 0.5], [1.0, 0.5]])), expected)
+                    assert_array_equal(
+                        model.predict(data_matrix_transform2([[0.0, 0.5], [0.49, 0.5], [0.51, 0.5], [1.0, 0.5]])),
+                        expected,
+                    )
 
     def test_decreasing_mse_for_increased_partition_prior(self):
         for data_matrix_transform in data_matrix_transforms:
@@ -147,17 +154,17 @@ class RegressionTreeTest(TestCase):
             sd_prior = 1
             prior_obs = 0.01
             kappa = prior_obs
-            alpha = prior_obs/2
+            alpha = prior_obs / 2
             var_prior = sd_prior**2
-            tau_prior = 1/var_prior
-            beta = alpha/tau_prior
+            tau_prior = 1 / var_prior
+            beta = alpha / tau_prior
 
             prior = np.array([mu, kappa, alpha, beta])
 
-            x = np.linspace(-np.pi/2, np.pi/2, 20)
-            y = np.linspace(-np.pi/2, np.pi/2, 20)
+            x = np.linspace(-np.pi / 2, np.pi / 2, 20)
+            y = np.linspace(-np.pi / 2, np.pi / 2, 20)
             X = np.array([x, y]).T
-            y = np.sin(x) + 3*np.cos(y)
+            y = np.sin(x) + 3 * np.cos(y)
 
             X = data_matrix_transform(X)
 
@@ -165,12 +172,12 @@ class RegressionTreeTest(TestCase):
                 mse_list = []
                 for partition_prior in [0.1, 0.5, 0.9, 0.99]:
                     model = create_regression_trees(prior, partition_prior)[i_model]
-                    print('Testing {}'.format(type(model).__name__))
+                    print(f"Testing {type(model).__name__}")
                     model.fit(X, y)
                     print(model)
                     mse = mean_squared_error(y, model.predict(X))
                     mse_list.append(mse)
 
                 self.assertTrue(mse_list[-1] < mse_list[0])
-                for i in range(0, len(mse_list)-1):
-                    self.assertTrue(mse_list[i+1] <= mse_list[i])
+                for i in range(len(mse_list) - 1):
+                    self.assertTrue(mse_list[i + 1] <= mse_list[i])

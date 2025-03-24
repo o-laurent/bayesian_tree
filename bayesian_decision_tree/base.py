@@ -2,13 +2,12 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
-from scipy.sparse import csr_matrix, csc_matrix
+from scipy.sparse import csc_matrix, csr_matrix
 from sklearn.base import BaseEstimator
 
 
 class BaseTree(ABC, BaseEstimator):
-    """
-    Abstract base class of all Bayesian decision tree models (classification and regression). Performs all
+    """Abstract base class of all Bayesian decision tree models (classification and regression). Performs all
     high-level fitting and prediction tasks and outsources the medium- and low-level work to subclasses.
 
     Implementation note: This class hierarchy is diamond-shaped: The four concrete model classes each
@@ -26,8 +25,7 @@ class BaseTree(ABC, BaseEstimator):
         self.level = level
 
     def fit(self, X, y, verbose=False, feature_names=None):
-        """
-        Trains this classification or regression tree using the training set (X, y).
+        """Trains this classification or regression tree using the training set (X, y).
 
         Parameters
         ----------
@@ -47,12 +45,11 @@ class BaseTree(ABC, BaseEstimator):
             An optional sequence of feature names. If not provided then 'x0', 'x1', ... is used
             if X is a matrix, or the column headers if X is a DataFrame.
 
-        References
+        References:
         ----------
 
         .. [1] https://arxiv.org/abs/1901.03214
         """
-
         # validation and input transformation
         if isinstance(y, list):
             y = np.array(y)
@@ -63,10 +60,10 @@ class BaseTree(ABC, BaseEstimator):
 
         X, feature_names = self._normalize_data_and_feature_names(X, feature_names)
         if X.shape[0] != len(y):
-            raise ValueError('Invalid shapes: X={}, y={}'.format(X.shape, y.shape))
+            raise ValueError(f"Invalid shapes: X={X.shape}, y={y.shape}")
 
         # fit
-        self._fit(X, y, verbose, feature_names, 'root')
+        self._fit(X, y, verbose, feature_names, "root")
 
         if self.prune:
             self._prune()
@@ -85,12 +82,11 @@ class BaseTree(ABC, BaseEstimator):
         X : array-like, scipy.sparse.csc_matrix, scipy.sparse.csr_matrix or pandas.DataFrame, shape = [n_samples, n_features]
             The input samples.
 
-        Returns
+        Returns:
         -------
         y : array of shape = [n_samples]
             The predicted classes, or the predict values.
         """
-
         # input transformation and checks
         X, _ = self._normalize_data_and_feature_names(X)
         self._ensure_is_fitted(X)
@@ -102,18 +98,16 @@ class BaseTree(ABC, BaseEstimator):
         return y
 
     def feature_importance(self):
-        """
-        Compute and return feature importance of this tree after having fitted it to data. Feature
+        """Compute and return feature importance of this tree after having fitted it to data. Feature
         importance for a given feature dimension is defined as the sum of all increases in the
         marginal data log-likelihood across splits of that dimension. Finally, the feature
         importance vector is normalized to sum to 1.
 
-        Returns
+        Returns:
         -------
         feature_importance: array of floats
             The feature importance.
         """
-
         self._ensure_is_fitted()
 
         feature_importance = np.zeros(self.n_dim_)
@@ -124,9 +118,13 @@ class BaseTree(ABC, BaseEstimator):
 
     def _predict(self, X, indices, predict_class, y):
         if self.is_leaf():
-            prediction = self._get_raw_leaf_data_internal() if predict_class is None \
-                            else self._predict_leaf() if predict_class \
-                            else self._compute_posterior_mean()
+            prediction = (
+                self._get_raw_leaf_data_internal()
+                if predict_class is None
+                else self._predict_leaf()
+                if predict_class
+                else self._compute_posterior_mean()
+            )
             for i in indices:
                 y[i] = prediction
         else:
@@ -176,12 +174,11 @@ class BaseTree(ABC, BaseEstimator):
         X : array-like, scipy.sparse.csc_matrix, scipy.sparse.csr_matrix or pandas.DataFrame, shape = [n_samples, n_features]
             The input samples.
 
-        Returns
+        Returns:
         -------
         y : array of shape = [n_samples * 2 * n_classes] for classification problems
             or [n_samples * 2 * 4] for regression problems.
         """
-
         # input transformation and checks
         X, _ = self._normalize_data_and_feature_names(X)
         self._ensure_is_fitted(X)
@@ -213,81 +210,87 @@ class BaseTree(ABC, BaseEstimator):
                 X = np.expand_dims(X, 0)
 
             if feature_names is None:
-                feature_names = ['x{}'.format(i) for i in range(X.shape[1])]
+                feature_names = [f"x{i}" for i in range(X.shape[1])]
 
         X = BaseTree._ensure_float64(X)
 
         if X.ndim != 2:
-            raise ValueError('X should have 2 dimensions but has {}'.format(X.ndim))
+            raise ValueError(f"X should have 2 dimensions but has {X.ndim}")
 
         return X, feature_names
 
     @staticmethod
     def _ensure_float64(data):
         if data.dtype in (
-                np.int8, np.int16, np.int32, np.int64,
-                np.uint8, np.uint16, np.uint32, np.uint64,
-                np.float32, np.float64):
+            np.int8,
+            np.int16,
+            np.int32,
+            np.int64,
+            np.uint8,
+            np.uint16,
+            np.uint32,
+            np.uint64,
+            np.float32,
+            np.float64,
+        ):
             return data
 
         # convert to np.float64 for performance reasons (matrices with floats but of type object are very slow)
         X_float = data.astype(np.float64)
         if not np.all(data == X_float):
-            raise ValueError('Cannot convert data matrix to np.float64 without loss of precision. Please check your data.')
+            raise ValueError(
+                "Cannot convert data matrix to np.float64 without loss of precision. Please check your data."
+            )
 
         return X_float
 
     def _ensure_is_fitted(self, X=None):
         if not self.is_fitted():
-            raise ValueError('Cannot predict on an untrained model; call .fit() first')
+            raise ValueError("Cannot predict on an untrained model; call .fit() first")
 
         if X is not None and X.shape[1] != self.n_dim_:
-            raise ValueError('Bad input dimensions: Expected {}, got {}'.format(self.n_dim_, X.shape[1]))
+            raise ValueError(f"Bad input dimensions: Expected {self.n_dim_}, got {X.shape[1]}")
 
     def is_fitted(self):
-        return hasattr(self, 'posterior_')
+        return hasattr(self, "posterior_")
 
     def get_depth(self):
         """Computes and returns the tree depth.
 
-        Returns
+        Returns:
         -------
         depth : int
             The tree depth.
         """
-
         return self._update_depth(0)
 
     def get_n_leaves(self):
         """Computes and returns the total number of leaves of this tree.
 
-        Returns
+        Returns:
         -------
         n_leaves : int
             The number of leaves.
         """
-
         return self._update_n_leaves(0)
 
     def _update_depth(self, depth):
         if self.is_leaf():
             return max(depth, self.level)
-        else:
-            if self.child1_ is not None:
-                depth = self.child1_._update_depth(depth)
-                depth = self.child2_._update_depth(depth)
+        if self.child1_ is not None:
+            depth = self.child1_._update_depth(depth)
+            depth = self.child2_._update_depth(depth)
 
-            return depth
+        return depth
 
     def _update_n_leaves(self, n_leaves):
         if self.is_leaf():
-            return n_leaves+1
-        else:
-            if self.child1_ is not None:
-                n_leaves = self.child1_._update_n_leaves(n_leaves)
-                n_leaves = self.child2_._update_n_leaves(n_leaves)
+            return n_leaves + 1
+        if self.child1_ is not None:
+            n_leaves = self.child1_._update_n_leaves(n_leaves)
+            n_leaves = self.child2_._update_n_leaves(n_leaves)
 
-            return n_leaves
+        return n_leaves
 
     def _erase_split_info_base(self):
         self.child1_ = None

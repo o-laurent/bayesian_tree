@@ -5,13 +5,10 @@ from bayesian_decision_tree.classification import PerpendicularClassificationTre
 from examples import helper
 
 # demo script for classification (binary or multiclass) using classic, axis-normal splits
-if __name__ == '__main__':
+if __name__ == "__main__":
     # proxies (in case you're running this behind a firewall)
     args = helper.parse_args()
-    proxies = {
-        'http': args.http_proxy,
-        'https': args.https_proxy
-    }
+    proxies = {"http": args.http_proxy, "https": args.https_proxy}
 
     # data set: uncomment one of the following sections
 
@@ -27,13 +24,13 @@ if __name__ == '__main__':
     y_test = np.zeros((n_test, 1))
     np.random.seed(666)
     for i in range(4):
-        X_train[i * n_train//4:(i + 1) * n_train//4, 0] = np.random.normal(x0[i], sd, n_train//4)
-        X_train[i * n_train//4:(i + 1) * n_train//4, 1] = np.random.normal(x1[i], sd, n_train//4)
-        y_train[i * n_train//4:(i + 1) * n_train//4] = i
+        X_train[i * n_train // 4 : (i + 1) * n_train // 4, 0] = np.random.normal(x0[i], sd, n_train // 4)
+        X_train[i * n_train // 4 : (i + 1) * n_train // 4, 1] = np.random.normal(x1[i], sd, n_train // 4)
+        y_train[i * n_train // 4 : (i + 1) * n_train // 4] = i
 
-        X_test[i * n_test//4:(i + 1) * n_test//4, 0] = np.random.normal(x0[i], sd, n_test//4)
-        X_test[i * n_test//4:(i + 1) * n_test//4, 1] = np.random.normal(x1[i], sd, n_test//4)
-        y_test[i * n_test//4:(i + 1) * n_test//4] = i
+        X_test[i * n_test // 4 : (i + 1) * n_test // 4, 0] = np.random.normal(x0[i], sd, n_test // 4)
+        X_test[i * n_test // 4 : (i + 1) * n_test // 4, 1] = np.random.normal(x1[i], sd, n_test // 4)
+        y_test[i * n_test // 4 : (i + 1) * n_test // 4] = i
     train = np.hstack((X_train, y_train))
     test = np.hstack((X_test, y_test))
 
@@ -75,26 +72,22 @@ if __name__ == '__main__':
     prior = prior_pseudo_observations * np.ones(n_classes)
 
     # model
-    model = PerpendicularClassificationTree(
-        partition_prior=0.9,
-        prior=prior,
-        delta=0,
-        prune=True)
+    model = PerpendicularClassificationTree(partition_prior=0.9, prior=prior, delta=0, prune=True)
 
     # train
     model.fit(X_train, y_train)
     print(model)
     print()
-    print('Tree depth and number of leaves: {}, {}'.format(model.get_depth(), model.get_n_leaves()))
-    print('Feature importance:', model.feature_importance())
+    print(f"Tree depth and number of leaves: {model.get_depth()}, {model.get_n_leaves()}")
+    print("Feature importance:", model.feature_importance())
 
     # compute accuracy
     y_pred_train = model.predict(X_train)
     y_pred_test = model.predict(X_test)
     accuracy_train = accuracy_score(y_train, y_pred_train)
     accuracy_test = accuracy_score(y_test, y_pred_test)
-    info_train = 'Train accuracy: {:.4f} %'.format(100 * accuracy_train)
-    info_test = 'Test accuracy:  {:.4f} %'.format(100 * accuracy_test)
+    info_train = f"Train accuracy: {100 * accuracy_train:.4f} %"
+    info_test = f"Test accuracy:  {100 * accuracy_test:.4f} %"
     print(info_train)
     print(info_test)
 
