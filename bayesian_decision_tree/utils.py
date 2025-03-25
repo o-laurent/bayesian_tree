@@ -11,7 +11,7 @@ def multivariate_betaln(alphas):
     return np.sum([gammaln(alpha) for alpha in alphas], axis=0) - gammaln(np.sum(alphas))
 
 
-def r2_series_generator(n_dim: int) -> Generator[np.ndarray, None, None]:
+def r2_series_generator(n_dim: int) -> Generator[np.ndarray]:
     """Computes R2 pseudo-random sequence, see
     http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
 

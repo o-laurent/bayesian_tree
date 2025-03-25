@@ -111,8 +111,7 @@ class StrMixin:
 
 
 class HyperplaneOptimizer(ABC, StrMixin):
-    """Abstract base class of all hyperplane optimizers.
-    """
+    """Abstract base class of all hyperplane optimizers."""
 
     def __init__(self, search_space_is_unit_hypercube):
         self.search_space_is_unit_hypercube = search_space_is_unit_hypercube
@@ -145,7 +144,7 @@ class ScipyOptimizer(HyperplaneOptimizer):
         unit_hypercube_bounds = np.vstack((np.zeros(n_dim - 1), np.ones(n_dim - 1))).T
 
         solver = self.solver_type(
-            func=optimization_function.compute, bounds=unit_hypercube_bounds, seed=self.seed, **self.extra_solver_kwargs
+            func=optimization_function.compute, bounds=unit_hypercube_bounds, **self.extra_solver_kwargs
         )
 
         solver.solve()

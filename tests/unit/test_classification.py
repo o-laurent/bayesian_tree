@@ -344,9 +344,7 @@ class ClassificationTreeTest(TestCase):
 
                 if isinstance(model, PerpendicularClassificationTree):
                     # TODO: also add for hyperplane version
-                    feature_names = (
-                        X.columns if isinstance(X, pd.DataFrame) else [f"x{i}" for i in range(X.shape[1])]
-                    )
+                    feature_names = X.columns if isinstance(X, pd.DataFrame) else [f"x{i}" for i in range(X.shape[1])]
                     expected_paths = [
                         [(0, feature_names[0], 0.5, False)],
                         [(0, feature_names[0], 0.5, False)],
@@ -375,7 +373,8 @@ class ClassificationTreeTest(TestCase):
     def test_prune(self):
         for model_no_prune, model_prune in zip(
             create_classification_trees(np.array([10, 10]), 0.9, prune=False),
-            create_classification_trees(np.array([10, 10]), 0.9, prune=True), strict=False,
+            create_classification_trees(np.array([10, 10]), 0.9, prune=True),
+            strict=False,
         ):
             np.random.seed(666)
 
@@ -428,7 +427,8 @@ class ClassificationTreeTest(TestCase):
             create_classification_trees(np.array([1, 1]), 0.99, prune=True),
             create_classification_trees(np.array([1, 1]), 0.99, prune=True),
             create_classification_trees(np.array([1, 1]), 0.99, prune=True),
-            create_classification_trees(np.array([1, 1]), 0.99, prune=True), strict=False,
+            create_classification_trees(np.array([1, 1]), 0.99, prune=True),
+            strict=False,
         ):
             X1 = np.vstack((+X0[:, 0], +X0[:, 1])).T
             X2 = np.vstack((+X0[:, 0], -X0[:, 1])).T

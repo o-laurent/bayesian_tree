@@ -392,7 +392,7 @@ def plot_root(root, X, y, title, cmap):
 
         # generate line name
         if side is not None:
-            side_name = " - ".join(f"{parents[i].side}{level-len(parents)+i+1}" for i in range(len(parents)))
+            side_name = " - ".join(f"{parents[i].side}{level - len(parents) + i + 1}" for i in range(len(parents)))
         else:
             side_name = ""
 
